@@ -12,6 +12,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import ru.zheleznov.impl.models.User;
 import ru.zheleznov.web.security.filters.UserFilter;
 
 
@@ -31,19 +32,22 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http
+                .csrf()
+                    .ignoringAntMatchers("/**").and() // TODO: 12.09.2021 убрать
                 .authorizeRequests()
-                .antMatchers("/profile").authenticated().and()
+                    .antMatchers("/profile").authenticated().and()
+                    //.antMatchers("/user/action/**").hasRole(User.Role.ROLE_ADMIN.toString()).and()
                 .formLogin()
-                .loginPage("/signIn")
-                .usernameParameter("email")
-                .defaultSuccessUrl("/profile")
-                .failureUrl("/signIn?error").and()
+                    .loginPage("/signIn")
+                    .usernameParameter("email")
+                    .defaultSuccessUrl("/profile")
+                    .failureUrl("/signIn?error").and()
                 .addFilterAfter(userFilter, UsernamePasswordAuthenticationFilter.class)
                 .logout()
-                .logoutRequestMatcher(new AntPathRequestMatcher("/logout", "GET"))
-                .logoutSuccessUrl("/signIn")
-                .invalidateHttpSession(true)
-                .deleteCookies("JSESSIONID");
+                    .logoutRequestMatcher(new AntPathRequestMatcher("/logout", "GET"))
+                    .logoutSuccessUrl("/signIn")
+                    .invalidateHttpSession(true)
+                    .deleteCookies("JSESSIONID");
     }
 
     @Override

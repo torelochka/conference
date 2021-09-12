@@ -2,13 +2,17 @@ package ru.zheleznov.impl.services;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
+import ru.zheleznov.api.dto.UserDeleteResult;
 import ru.zheleznov.api.dto.UserDto;
 import ru.zheleznov.api.services.UserService;
 import ru.zheleznov.impl.models.User;
 import ru.zheleznov.impl.repositories.UserRepository;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -33,5 +37,35 @@ public class UserServiceImpl implements UserService {
     public Optional<UserDto> userById(Long id) {
         return userRepository.findById(id)
                 .map(user -> modelMapper.map(user, UserDto.class));
+    }
+
+    @Override
+    public UserDeleteResult deleteUser(Long id) {
+        try {
+            userRepository.deleteById(id);
+            return new UserDeleteResult("Пользователь удален успешно");
+        } catch (EmptyResultDataAccessException e) {
+            return new UserDeleteResult("Пользователь с таким id не найден");
+        }
+    }
+
+    @Override
+    public void updateUser(Long id) {
+        Optional<User> optionalUser = userRepository.findById(id);
+
+        if (optionalUser.isPresent()) {
+            User user = optionalUser.get();
+
+            user.setRole(User.Role.ROLE_SPEAKER);
+
+            userRepository.save(user);
+        }
+    }
+
+    @Override
+    public List<UserDto> getAllUsers() {
+        return userRepository.findAll()
+                .stream().map(user -> modelMapper.map(user, UserDto.class))
+                .collect(Collectors.toList());
     }
 }

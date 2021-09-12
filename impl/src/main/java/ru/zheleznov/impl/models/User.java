@@ -1,11 +1,10 @@
 package ru.zheleznov.impl.models;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import org.hibernate.annotations.Cascade;
 
 import javax.persistence.*;
+import java.util.Set;
 
 @Data
 @NoArgsConstructor
@@ -20,6 +19,12 @@ public class User {
     private Long id;
     private String email;
     private String password;
+
+    @ManyToMany(fetch = FetchType.EAGER, mappedBy = "speakers")
+    @Cascade(org.hibernate.annotations.CascadeType.DELETE)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private Set<Talk> talks;
 
     @Builder.Default
     @Enumerated(value = EnumType.STRING)
