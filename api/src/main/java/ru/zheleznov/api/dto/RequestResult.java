@@ -5,15 +5,14 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.Date;
+import javax.annotation.security.DenyAll;
+import java.util.Optional;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ScheduleDto {
-    private Long id;
-    private RoomDto room;
-    private Date dateStart;
-    private Date dateEnd;
+public class RequestResult<T> {
+    private Optional<T> object;
+    private String message;
 }

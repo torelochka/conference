@@ -4,7 +4,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import ru.zheleznov.api.dto.RequestResult;
 import ru.zheleznov.api.dto.UserDeleteResult;
+import ru.zheleznov.api.dto.UserDto;
 import ru.zheleznov.api.services.UserService;
 
 @RestController
@@ -19,7 +21,7 @@ public class AdminController {
     }
 
     @DeleteMapping("/{id}/delete")
-    public UserDeleteResult userDelete(@PathVariable Long id) {
+    public RequestResult<UserDto> userDelete(@PathVariable Long id) {
         return userService.deleteUser(id);
     }
 

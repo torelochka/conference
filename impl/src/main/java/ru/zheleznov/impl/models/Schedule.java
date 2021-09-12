@@ -21,10 +21,11 @@ public class Schedule {
     private Long id;
 
     @OneToOne
-    private Room auditorium;
+    private Room room;
 
     @OneToOne
     private Talk talk;
 
-    private Date date;
+    private Date dateStart;
+    private Date dateEnd;
 }

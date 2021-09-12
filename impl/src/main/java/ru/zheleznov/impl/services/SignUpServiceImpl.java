@@ -4,6 +4,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import ru.zheleznov.api.dto.RequestResult;
 import ru.zheleznov.api.dto.SignUpResult;
 import ru.zheleznov.api.dto.UserDto;
 import ru.zheleznov.api.forms.SignUpForm;
@@ -39,12 +40,10 @@ public class SignUpServiceImpl implements SignUpService {
     }
 
     @Override
-    public SignUpResult signUp(SignUpForm signUpForm) {
+    public RequestResult<UserDto> signUp(SignUpForm signUpForm) {
         if (userRepository.findByEmail(signUpForm.getEmail()).isPresent()) {
-            return SignUpResult.builder()
-                    .user(Optional.empty())
-                    .message("Почта уже занята")
-                    .build();
+            return new RequestResult<>(
+                    Optional.empty(),"Почта уже занята");
         }
 
         UUID confirmedCode = UUID.randomUUID();
@@ -61,9 +60,7 @@ public class SignUpServiceImpl implements SignUpService {
             mailService.sendEmailForConfirm(user.getEmail(), confirmedCode.toString());
         });
 
-        return SignUpResult.builder()
-                .user(Optional.of(userDto))
-                .message("Регистрация прошла успешно")
-                .build();
+        return new RequestResult<>(
+                Optional.of(userDto),"Регистрация прошла успешно");
     }
 }

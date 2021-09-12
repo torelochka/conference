@@ -4,6 +4,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
+import ru.zheleznov.api.dto.RequestResult;
 import ru.zheleznov.api.dto.UserDeleteResult;
 import ru.zheleznov.api.dto.UserDto;
 import ru.zheleznov.api.services.UserService;
@@ -40,12 +41,15 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserDeleteResult deleteUser(Long id) {
+    public RequestResult<UserDto> deleteUser(Long id) {
         try {
             userRepository.deleteById(id);
-            return new UserDeleteResult("Пользователь удален успешно");
+
+            return new RequestResult<>(
+                    Optional.empty(),"Пользователь удален успешно");
         } catch (EmptyResultDataAccessException e) {
-            return new UserDeleteResult("Пользователь с таким id не найден");
+            return new RequestResult<>(
+                    Optional.empty(),"Пользователь с таким id не найден");
         }
     }
 

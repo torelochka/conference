@@ -1,6 +1,7 @@
 package ru.zheleznov.impl;
 
 import org.modelmapper.ModelMapper;
+import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -13,12 +14,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 @SpringBootApplication
-public class ImplApplication{
+public class ImplApplication {
 
 	@Bean
-	public ModelMapper modelMapper() {
-		return new ModelMapper();
-	}
+	public ModelMapper modelMapper() { return new ModelMapper(); }
 
 	@Bean
 	public ExecutorService executorService() { return Executors.newCachedThreadPool(); }
