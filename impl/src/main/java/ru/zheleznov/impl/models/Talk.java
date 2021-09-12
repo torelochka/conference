@@ -23,4 +23,9 @@ public class Talk {
 
     @ManyToMany(fetch = FetchType.EAGER)
     private Set<User> speakers;
+
+    @OneToOne
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private Schedule schedule;
 }

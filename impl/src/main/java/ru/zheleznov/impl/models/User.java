@@ -5,6 +5,7 @@ import org.hibernate.annotations.Cascade;
 
 import javax.persistence.*;
 import java.util.Set;
+import java.util.UUID;
 
 @Data
 @NoArgsConstructor
@@ -19,6 +20,8 @@ public class User {
     private Long id;
     private String email;
     private String password;
+
+    private UUID confirmedCode;
 
     @ManyToMany(fetch = FetchType.EAGER, mappedBy = "speakers")
     @Cascade(org.hibernate.annotations.CascadeType.DELETE)
