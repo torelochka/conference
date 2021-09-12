@@ -1,9 +1,6 @@
 package ru.zheleznov.api.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.Set;
 
@@ -15,5 +12,4 @@ public class TalkDto {
     private Long id;
     private String title;
     private Set<UserDto> speakers;
-    private ScheduleDto schedule;
 }

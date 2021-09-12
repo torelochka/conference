@@ -23,7 +23,7 @@ public class Schedule {
     @OneToOne
     private Room room;
 
-    @OneToOne
+    @OneToOne(mappedBy = "schedule")
     private Talk talk;
 
     private Date dateStart;

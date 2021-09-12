@@ -14,6 +14,7 @@ import java.util.Date;
 public class ScheduleDto {
     private Long id;
     private RoomDto room;
+    private TalkDto talk;
     private Date dateStart;
     private Date dateEnd;
 }
