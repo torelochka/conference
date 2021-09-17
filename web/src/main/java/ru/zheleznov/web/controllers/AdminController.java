@@ -2,15 +2,12 @@ package ru.zheleznov.web.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-import ru.zheleznov.api.dto.RequestResult;
-import ru.zheleznov.api.dto.UserDeleteResult;
-import ru.zheleznov.api.dto.UserDto;
+import ru.zheleznov.api.dto.MessageResponse;
 import ru.zheleznov.api.services.UserService;
 
 @RestController
-@RequestMapping("/user/action")
+@RequestMapping("/user/")
 public class AdminController {
 
     private final UserService userService;
@@ -20,13 +17,16 @@ public class AdminController {
         this.userService = userService;
     }
 
-    @DeleteMapping("/{id}/delete")
-    public RequestResult<UserDto> userDelete(@PathVariable Long id) {
-        return userService.deleteUser(id);
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> userDelete(@PathVariable Long id) {
+        userService.deleteUser(id);
+
+        return ResponseEntity.ok(new MessageResponse("Success"));
     }
 
-    @PutMapping("/{id}/update")
-    public void updateListenerToSpeaker(@PathVariable Long id) {
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateListenerToSpeaker(@PathVariable Long id) {
          userService.updateUser(id);
+        return ResponseEntity.ok(new MessageResponse("Success"));
     }
 }

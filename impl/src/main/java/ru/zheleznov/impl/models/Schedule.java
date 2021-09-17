@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.aspectj.lang.annotation.DeclareAnnotation;
+import org.hibernate.annotations.Cascade;
 
 import javax.persistence.*;
 import java.util.Date;
@@ -23,7 +23,8 @@ public class Schedule {
     @OneToOne
     private Room room;
 
-    @OneToOne(mappedBy = "schedule")
+    @OneToOne
+    @Cascade(org.hibernate.annotations.CascadeType.DELETE)
     private Talk talk;
 
     private Date dateStart;

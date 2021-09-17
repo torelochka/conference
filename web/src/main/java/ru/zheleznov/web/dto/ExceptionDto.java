@@ -1,18 +1,16 @@
-package ru.zheleznov.api.dto;
+package ru.zheleznov.web.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import javax.annotation.security.DenyAll;
-import java.util.Optional;
+import org.springframework.http.HttpStatus;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class RequestResult<T> {
-    private Optional<T> object;
+public class ExceptionDto {
     private String message;
+    private HttpStatus statusCode;
 }

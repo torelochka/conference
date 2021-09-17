@@ -7,4 +7,5 @@ import java.util.List;
 public interface ScheduleService {
     List<ScheduleDto> getAllSchedules();
 
+    ScheduleDto getScheduleByTalkId(Long talkId);
 }

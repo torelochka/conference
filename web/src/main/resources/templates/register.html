@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:v-on="http://www.w3.org/1999/xhtml" xmlns:th="http://www.w3.org/1999/xhtml">
+<head th:replace="layouts/header :: header('Register')"/>
+<body>
+<div id="root">
+    <header th:replace="layouts/nav :: nav"></header>
+    <main>
+        <section class="mt-5 mb-4">
+            <div class="row">
+                <div class="col"></div>
+                <div class="col-8 align-self-center">
+                    <div class="card wish-list mb-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="alert alert-danger" role="alert" v-if="isError()">
+                                    {{error}}
+                                </div>
+                                <h4 class="error-message" id="error-message"></h4>
+                                <form autocomplete="off" action="/registration" method="post" id="form">
+                                    <div class="form-group">
+                                        <span class="text-black-50">Email</span>
+                                        <input v-model="email" id="email-signin" type="text" data-verify="email"
+                                               class="form-control" name="email"
+                                               required>
+                                    </div>
+                                    <div class="form-group">
+                                        <span class="text-black-50">Password</span>
+                                        <input v-model="password" id="password-signin" type="password" class="form-control"
+                                               name="password" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <span class="text-black-50">Confirm password</span>
+                                        <input v-model="passwordAgain" id="password-again" type="password" class="form-control"
+                                               name="password" required>
+                                    </div>
+                                    <input id='submit'
+                                           class="btn btn-primary btn-lg btn-block waves-effect waves-light"
+                                           type="button" v-on:click="register" value="Confirmed">
+                                </form>
+                                <hr>
+                                <p><a href="/login" class="text-secondary">Login?</a></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col"></div>
+            </div>
+        </section>
+    </main>
+</div>
+</body>
+<div th:replace="layouts/footer :: foot"></div>
+<script>
+    function getCookie(name) {
+        var value = "; " + document.cookie;
+        var parts = value.split("; " + name + "=");
+        if (parts.length == 2) return parts.pop().split(";").shift();
+    }
+
+    window.Event = new Vue({
+        data: {isError: false}
+    });
+
+    var app = new Vue({
+        el: '#root',
+        mounted() {
+            Event.$on('logged-in', function () {
+                window.location.replace("/");
+                window.location.replace("/");
+            })
+        },
+        data: {
+            email: '',
+            password: '',
+            passwordAgain: '',
+            error: '',
+        },
+        methods: {
+            register() {
+                this.error = ""
+                if (this.password !== this.passwordAgain) {
+                    window.Event.isError = true;
+                    this.error = "Passwords don't match"
+                    return;
+                }
+                let rest = axios({
+                    method: 'post',
+                    url: 'api/auth/signUp',
+                    data: {email: this.email, password: this.password, passwordAgain: this.passwordAgain}
+                }).then(function (response) {
+                    window.Event.isError = false;
+                    document.location.replace("/login");
+                    return response
+                }).catch(function (errorMsg) {
+                    window.Event.isError = true;
+                    return errorMsg.response.data.message;
+                });
+
+                rest.then(data => {
+                    this.error = data
+                    console.log(data)
+                    console.log(this.error)
+                })
+            }, isError() {
+                return window.Event.isError;
+            }
+
+        }
+    });
+</script>
+</html>

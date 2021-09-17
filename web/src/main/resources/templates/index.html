@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml"
+      xmlns:v-on="http://www.w3.org/1999/xhtml">
+<head th:replace="layouts/header :: header('index')"/>
+<body>
+<div id="root">
+    <header th:replace="layouts/nav :: nav"></header>
+    <div class="container">
+        <h1>Talks</h1>
+        <schedule-list :schedules="schedules"/>
+    </div>
+</div>
+</body>
+<script>
+    var app = new Vue({
+        el: '#root',
+        data: {schedules: []},
+        mounted() {
+            this.fetchSchedules();
+        },
+        methods: {
+            fetchSchedules() {
+                axios.get("/schedule").then(function (response) {
+                    this.schedules = response.data;
+                }.bind(this));
+            },
+            getLink(talk) {
+                return '/talk/' + talk.id;
+            }
+        }
+    });
+
+    Vue.component('schedule-list', {
+        props: ['schedules'],
+        data: function () {
+            return {
+                schedule: null
+            }
+        },
+        template:
+            '<div class="row">' +
+            '<schedule-row v-for="schedule in schedules" :key="schedule.id" ' + ':schedule="schedule" />' +
+            '</div>',
+    });
+
+    Vue.component('schedule-row', {
+        props: ['schedule'],
+        template: '    <div class="col mt-3"><div class="card" style="width: 18rem;">' +
+            '        <div class="card-body">' +
+            '            <h5 class="card-title"> {{schedule.talk.title}}</h5>' +
+            '            <p class="card-text">When: {{schedule.dateStart}} <br> Room {{schedule.room.title}}</p>' +
+            '            <a class="btn btn-primary text-white" v-on:click="followTalk">More</a>' +
+            '        </div>' +
+            '    </div>' +
+            '</div>',
+        methods: {
+            followTalk: function () {
+                console.log(this.schedule.talk.id)
+                document.location.replace("/talkPage/" + this.schedule.talk.id)
+            }
+        }
+    });
+</script>
+<div th:replace="layouts/footer :: foot"></div>
+</html>

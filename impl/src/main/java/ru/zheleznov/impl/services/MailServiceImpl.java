@@ -7,6 +7,8 @@ import freemarker.template.TemplateExceptionHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassRelativeResourceLoader;
+import org.springframework.mail.MailParseException;
+import org.springframework.mail.MailSendException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.mail.javamail.MimeMessagePreparator;
@@ -54,7 +56,11 @@ public class MailServiceImpl implements MailService {
         attributes.put("host", host);
         String mailText = getEmailText(attributes);
         MimeMessagePreparator messagePreparator = getEmail(email, mailText, "Регистрация");
-        javaMailSender.send(messagePreparator);
+        try {
+            javaMailSender.send(messagePreparator);
+        } catch (MailSendException | MailParseException e) {
+            throw new IllegalArgumentException("Email not valid");
+        }
     }
 
 

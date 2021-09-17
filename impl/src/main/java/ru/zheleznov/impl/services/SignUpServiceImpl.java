@@ -4,8 +4,6 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import ru.zheleznov.api.dto.RequestResult;
-import ru.zheleznov.api.dto.SignUpResult;
 import ru.zheleznov.api.dto.UserDto;
 import ru.zheleznov.api.forms.SignUpForm;
 import ru.zheleznov.api.services.MailService;
@@ -13,7 +11,6 @@ import ru.zheleznov.api.services.SignUpService;
 import ru.zheleznov.impl.models.User;
 import ru.zheleznov.impl.repositories.UserRepository;
 
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 
@@ -40,10 +37,9 @@ public class SignUpServiceImpl implements SignUpService {
     }
 
     @Override
-    public RequestResult<UserDto> signUp(SignUpForm signUpForm) {
+    public UserDto signUp(SignUpForm signUpForm) {
         if (userRepository.findByEmail(signUpForm.getEmail()).isPresent()) {
-            return new RequestResult<>(
-                    Optional.empty(),"Почта уже занята");
+            throw new IllegalArgumentException("Email already exist");
         }
 
         UUID confirmedCode = UUID.randomUUID();
@@ -60,7 +56,6 @@ public class SignUpServiceImpl implements SignUpService {
             mailService.sendEmailForConfirm(user.getEmail(), confirmedCode.toString());
         });
 
-        return new RequestResult<>(
-                Optional.of(userDto),"Регистрация прошла успешно");
+        return userDto;
     }
 }

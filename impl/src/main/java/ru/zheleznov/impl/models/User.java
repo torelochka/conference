@@ -1,7 +1,6 @@
 package ru.zheleznov.impl.models;
 
 import lombok.*;
-import org.hibernate.annotations.Cascade;
 
 import javax.persistence.*;
 import java.util.Set;
@@ -18,35 +17,35 @@ public class User {
     @Id
     @GeneratedValue(strategy= GenerationType.IDENTITY)
     private Long id;
+    @Column(unique = true)
     private String email;
     private String password;
 
     private UUID confirmedCode;
 
     @ManyToMany(fetch = FetchType.EAGER, mappedBy = "speakers")
-    @Cascade(org.hibernate.annotations.CascadeType.DELETE)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Set<Talk> talks;
 
     @Builder.Default
     @Enumerated(value = EnumType.STRING)
-    private Role role = Role.ROLE_LISTENER;
+    private Role role = Role.LISTENER;
 
     @Builder.Default
     @Enumerated(value = EnumType.STRING)
-    private State state = State.STATE_ACTIVE;
+    private State state = State.NOT_CONFIRMED;
 
     public enum State {
-        STATE_ACTIVE, STATE_BANNED
+        STATE_ACTIVE, STATE_BANNED, NOT_CONFIRMED
     }
 
     public enum Role {
-        ROLE_SPEAKER, ROLE_LISTENER, ROLE_ADMIN
+        SPEAKER, LISTENER, ADMIN
     }
 
     public boolean isAdmin() {
-        return this.role == Role.ROLE_ADMIN;
+        return this.role == Role.ADMIN;
     }
 
     public boolean isActive() { return this.state == State.STATE_ACTIVE; }

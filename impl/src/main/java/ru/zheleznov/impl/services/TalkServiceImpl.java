@@ -3,8 +3,8 @@ package ru.zheleznov.impl.services;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ru.zheleznov.api.dto.RequestResult;
 import ru.zheleznov.api.dto.TalkDto;
+import ru.zheleznov.api.dto.UserDto;
 import ru.zheleznov.api.forms.TalkCreateForm;
 import ru.zheleznov.api.services.TalkService;
 import ru.zheleznov.impl.models.Room;
@@ -16,6 +16,7 @@ import ru.zheleznov.impl.repositories.ScheduleRepository;
 import ru.zheleznov.impl.repositories.TalkRepository;
 import ru.zheleznov.impl.repositories.UserRepository;
 
+import javax.persistence.EntityNotFoundException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -52,26 +53,13 @@ public class TalkServiceImpl implements TalkService {
     }
 
     @Override
-    public RequestResult<TalkDto> save(TalkCreateForm talkForm) {
-
-        Talk talk = Talk.builder()
-                .title(talkForm.getTitle())
-                .build();
-
-        Set<User> speakers = getSpeakers(talkForm.getSpeakersId());
-
-        if (speakers == null) {
-            return new RequestResult<>(
-                    Optional.empty(),"Один или несколько спикеров не найдены");
-        }
-
-        talk.setSpeakers(speakers);
+    public TalkDto save(TalkCreateForm talkForm) {
+        Talk talk = prepareSpeakers(talkForm);
 
         Optional<Room> room = roomRepository.findById(talkForm.getAuditoriumId());
 
         if (!room.isPresent()) {
-            return new RequestResult<>(
-                    Optional.empty(),"Такая аудитория не найдена");
+            throw new EntityNotFoundException("Room not found");
         }
 
         Schedule schedule = Schedule.builder()
@@ -80,37 +68,134 @@ public class TalkServiceImpl implements TalkService {
                 .dateEnd(talkForm.getDateEnd())
                 .build();
 
-        Schedule scheduleFromDb = checkAndSaveSchedule(schedule);
-
-        if (scheduleFromDb == null) {
-            return new RequestResult<>(
-                    Optional.empty(),"Время в этой аудитории уже занято");
+        if (!checkSchedule(schedule)) {
+            throw new IllegalArgumentException("This time in the room is already occupied");
         }
-
-        talk.setSchedule(schedule);
 
         Talk talkFromDb = talkRepository.save(talk);
 
-        return new RequestResult<>(
-                Optional.of(modelMapper.map(talkFromDb, TalkDto.class))
-                ,"Доклад успешно добавлен");
+        schedule.setTalk(talkFromDb);
+        scheduleRepository.save(schedule);
+
+        return modelMapper.map(talkFromDb, TalkDto.class);
     }
 
-    private Schedule checkAndSaveSchedule(Schedule schedule) {
-        if (scheduleRepository.isScheduleOverlaps(schedule.getDateStart(), schedule.getDateEnd(), schedule.getRoom())) {
-            return null;
+    private Talk prepareSpeakers(TalkCreateForm talkForm) {
+
+        Talk talk = Talk.builder()
+                .title(talkForm.getTitle())
+                .build();
+
+        Set<User> speakers = getSpeakers(talkForm.getSpeakersId());
+
+        if (speakers == null) {
+            throw new IllegalArgumentException("One or more speakers were not found or are not speakers");
         }
 
-        return scheduleRepository.save(schedule);
+        talk.setSpeakers(speakers);
+
+        return talk;
+    }
+
+    @Override
+    public Boolean deleteTalk(Long id, UserDto userDto) {
+        Optional<Talk> optionalTalk = talkRepository.findById(id);
+
+        if (optionalTalk.isPresent()) {
+            if (optionalTalk.get().getSpeakers()
+                    .stream().noneMatch(user -> user.getId().equals(userDto.getId()))) {
+                return false;
+            }
+        }
+
+        Optional<Schedule> schedule = scheduleRepository.findByTalkId(id);
+        if (!schedule.isPresent()) {
+            return false;
+        }
+
+        scheduleRepository.deleteById(schedule.get().getId());
+
+        return true;
+    }
+
+    @Override
+    public Boolean deleteTalk(Long id) {
+        Optional<Schedule> schedule = scheduleRepository.findByTalkId(id);
+        if (!schedule.isPresent()) {
+            return false;
+        }
+
+        scheduleRepository.deleteById(schedule.get().getId());
+
+        return true;
+    }
+
+    @Override
+    public TalkDto updateTalk(Long id, TalkCreateForm talkCreateForm) {
+        Optional<Talk> optionalTalk = talkRepository.findById(id);
+
+        if (!optionalTalk.isPresent()) {
+            throw new EntityNotFoundException("Talk not found");
+        }
+
+        Talk updateTalk = prepareSpeakers(talkCreateForm);
+        Talk talkToUpdate = optionalTalk.get();
+        Long updateTalkId = talkToUpdate.getId();
+
+        talkToUpdate = modelMapper.map(updateTalk, Talk.class);
+        talkToUpdate.setId(updateTalkId);
+
+        Optional<Room> room = roomRepository.findById(talkCreateForm.getAuditoriumId());
+        if (!room.isPresent()) {
+            throw new EntityNotFoundException("Room not found");
+        }
+
+        Schedule scheduleTalkToUpdate = scheduleRepository.findByTalkId(updateTalkId).get();
+
+        Schedule schedule = Schedule.builder()
+                .room(room.get())
+                .dateStart(talkCreateForm.getDateStart())
+                .dateEnd(talkCreateForm.getDateEnd())
+                .build();
+
+        if (scheduleRepository.isScheduleOverlapsWithoutExactlySchedule(
+                schedule.getDateStart(), schedule.getDateEnd(), schedule.getRoom(), scheduleTalkToUpdate
+        )) {
+            throw new IllegalArgumentException("This time in the room is already occupied");
+        }
+
+        scheduleTalkToUpdate.setDateStart(talkCreateForm.getDateStart());
+        scheduleTalkToUpdate.setDateEnd(talkCreateForm.getDateEnd());
+
+        talkRepository.save(updateTalk);
+        scheduleRepository.save(scheduleTalkToUpdate);
+
+        return modelMapper.map(talkToUpdate, TalkDto.class);
+    }
+
+    @Override
+    public TalkDto getTalk(Long id) {
+        Optional<Talk> optionalTalk = talkRepository.findById(id);
+
+        if (!optionalTalk.isPresent()) {
+            throw new EntityNotFoundException("Talk not found");
+        }
+
+        return modelMapper.map(optionalTalk.get(), TalkDto.class);
+    }
+
+    private Boolean checkSchedule(Schedule schedule) {
+        return !scheduleRepository.isScheduleOverlaps(
+                schedule.getDateStart(), schedule.getDateEnd(), schedule.getRoom());
     }
 
     private Set<User> getSpeakers(Set<Long> speakersId) {
         Set<User> users = new HashSet<>();
 
-        for (Long id: speakersId) {
+        for (Long id : speakersId) {
             Optional<User> optionalUser = userRepository.findById(id);
 
-            if (optionalUser.isPresent()) {
+            if (optionalUser.isPresent() && optionalUser.get().getRole().equals(User.Role.SPEAKER)) {
                 users.add(optionalUser.get());
             } else {
                 return null;

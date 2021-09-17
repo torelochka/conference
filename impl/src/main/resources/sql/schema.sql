@@ -1,6 +1,6 @@
 INSERT INTO  room (title) VALUES
-                                ('первая'),
-                                ('вторая'),
-                                ('третья'),
-                                ('четвертая')
+                                ('First'),
+                                ('Second'),
+                                ('Third'),
+                                ('Fourth')
 ON CONFLICT (title) DO NOTHING;

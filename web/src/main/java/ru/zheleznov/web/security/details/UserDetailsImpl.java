@@ -1,10 +1,8 @@
 package ru.zheleznov.web.security.details;
 
-import org.modelmapper.ModelMapper;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import ru.zheleznov.api.dto.UserDto;
 import ru.zheleznov.impl.models.User;
 
 import java.util.Collection;
@@ -14,15 +12,12 @@ public class UserDetailsImpl implements UserDetails {
 
     private final User user;
 
-    private final ModelMapper modelMapper;
-
-    public UserDto getUser() {
-        return modelMapper.map(user, UserDto.class);
+    public User getUser() {
+        return user;
     }
 
-    public UserDetailsImpl(User user, ModelMapper modelMapper) {
+    public UserDetailsImpl(User user) {
         this.user = user;
-        this.modelMapper = modelMapper;
     }
 
     @Override

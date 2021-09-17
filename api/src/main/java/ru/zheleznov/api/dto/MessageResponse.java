@@ -9,6 +9,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UserDeleteResult {
-    private String message;
+public class MessageResponse {
+	private String message;
 }

@@ -1,6 +1,5 @@
 package ru.zheleznov.web.security.details;
 
-import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -14,12 +13,9 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     private final UserRepository userRepository;
 
-    private final ModelMapper modelMapper;
-
     @Autowired
-    public UserDetailsServiceImpl(UserRepository userRepository, ModelMapper modelMapper) {
+    public UserDetailsServiceImpl(UserRepository userRepository) {
         this.userRepository = userRepository;
-        this.modelMapper = modelMapper;
     }
 
     @Override
@@ -27,6 +23,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         User user =  userRepository.findByEmail(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        return new UserDetailsImpl(user, modelMapper);
+        return new UserDetailsImpl(user);
     }
 }

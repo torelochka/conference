@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:v-on="http://www.w3.org/1999/xhtml" xmlns:th="http://www.w3.org/1999/xhtml">
+<head th:replace="layouts/header :: header('Talk create')"/>
+<body>
+<div id="root">
+    <header th:replace="layouts/nav :: nav"></header>
+    <main>
+        <section class="mt-5 mb-4">
+            <div class="row">
+                <div class="col"></div>
+                <div class="col-8 align-self-center">
+                    <div class="card wish-list mb-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="check-date col">
+                                        <label for="dateStart" class="text-black-50">Date Start:</label>
+                                        <input type="text" v-model="dateStart" class="date-input" id="dateStart"
+                                               name="date" required placeholder="dd-mm-yyyy hh:mm">
+                                        <i class="far fa-calendar"></i>
+                                    </div>
+                                    <div class="check-date col">
+                                        <label for="dateEnd" class="text-black-50">Date End:</label>
+                                        <input type="text" v-model="dateEnd" class="date-input" id="dateEnd"
+                                               name="date" required placeholder="dd-mm-yyyy hh:mm">
+                                        <i class="far fa-calendar"></i>
+                                    </div>
+                                </div>
+                                <div class="alert alert-danger" role="alert" v-if="isError()">
+                                    {{error}}
+                                </div>
+                                <h4 class="error-message" id="error-message"></h4>
+                                <div class="form-group">
+                                    <span class="text-black-50">Title</span>
+                                    <input v-model="title" id="email-signin" type="text"
+                                           class="form-control" name="title"
+                                           required>
+                                </div>
+                                <label for="speakers">Speakers</label>
+                                <select id="speakers" class="form-select" v-model="speakers" aria-label="" multiple
+                                        required>
+                                </select>
+                                <label for="rooms">Room</label>
+                                <select id="rooms" class="form-select" v-model="room" aria-label="" required>
+                                </select>
+                                <input id='submit'
+                                       class="btn btn-primary btn-lg btn-block waves-effect waves-light"
+                                       type="button" v-on:click="create" value="Confirmed">
+                                <hr>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col"></div>
+            </div>
+        </section>
+    </main>
+</div>
+</body>
+<div th:replace="layouts/footer :: foot"></div>
+<script>
+
+    window.Event = new Vue({
+        data: {isError: false}
+    });
+
+    function getCookie(name) {
+        var value = "; " + document.cookie;
+        var parts = value.split("; " + name + "=");
+        if (parts.length == 2) return parts.pop().split(";").shift();
+    }
+
+    var app = new Vue({
+        el: '#root',
+        mounted() {
+            if (getCookie("access_token")) {
+                axios.get("/getUser/?access_token=" + getCookie("access_token"))
+                    .then(function (response) {
+                        let user = response.data
+                        if (user.role !== "SPEAKER") {
+                            window.location.replace("/")
+                        }
+                        window.Event.isLoggedIn = true;
+                        Event.$emit('logged-in');
+                        this.fetchSpeakers()
+                        this.fetchRooms()
+                    }.bind(this))
+                    .catch(function (error) {
+                        delete_cookie("access_token");
+                        window.location.replace("/")
+                    });
+            } else {
+                window.location.replace("/")
+            }
+
+        },
+        data: {
+            title: '',
+            error: '',
+            speakers: [],
+            room: '',
+            allSpeakers: [],
+            rooms: [],
+            dateStart: '',
+            dateEnd: '',
+        },
+        methods: {
+            fetchSpeakers() {
+                axios.get("/speakers").then(function (response) {
+                    this.allSpeakers = response.data;
+                    response.data.forEach(function (speaker) {
+                        $("#speakers").append("<option value='" + speaker.id + "'>" + speaker.email + " </option>")
+                    })
+                }.bind(this));
+            },
+            fetchRooms() {
+                axios.get("/rooms").then(function (response) {
+                    this.rooms = response.data;
+                    response.data.forEach(function (room) {
+                        $("#rooms").append("<option value='" + room.id + "'>" + room.title + " </option>")
+                    })
+                }.bind(this));
+            },
+            create() {
+                let startDate = new Date(this.dateStart)
+                let endDate = new Date(this.dateEnd)
+                if (Object.prototype.toString.call(startDate) === "[object Date]"
+                    && Object.prototype.toString.call(endDate) === "[object Date]") {
+                    // проверка примитивная, не проверяется формат даты, а лишь дата это или нет
+                    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+                        window.Event.isError = true;
+                        this.error = "Date not valid"
+                        return;
+                    }
+                }
+                let test = '';
+                let rest = axios({
+                    method: 'post',
+                    url: '/talk',
+                    headers: {"Authorization": "Bearer " + getCookie("access_token")},
+                    data: {
+                        title: this.title,
+                        dateStart: this.dateStart,
+                        dateEnd: this.dateEnd,
+                        speakersId: this.speakers,
+                        auditoriumId: this.room
+                    }
+                }).then(function (response) {
+                    window.Event.isError = false
+                    document.location.replace("/");
+                    return response
+                }).catch(function (errorMsg) {
+                    window.Event.isError = true
+                    return errorMsg.response.data.message;
+                });
+                rest.then(data => {
+                    this.error = data
+                    console.log(data)
+                    console.log(this.error)
+                })
+                console.log(test)
+            },
+            isError() {
+                return window.Event.isError;
+            }
+        }
+    });
+
+</script>
+</html>

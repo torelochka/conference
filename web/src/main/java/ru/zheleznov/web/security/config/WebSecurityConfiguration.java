@@ -1,57 +1,46 @@
 package ru.zheleznov.web.security.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import ru.zheleznov.impl.models.User;
-import ru.zheleznov.web.security.filters.UserFilter;
+import ru.zheleznov.web.security.jwt.TokenAuthenticationFilter;
+import ru.zheleznov.web.security.jwt.TokenAuthenticationProvider;
 
 
 @Configuration
 public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 
     @Autowired
-    private PasswordEncoder passwordEncoder;
+    private TokenAuthenticationFilter tokenAuthenticationFilter;
 
     @Autowired
-    private UserFilter userFilter;
-
-    @Autowired
-    @Qualifier("UserDetailsServiceImpl")
-    private UserDetailsService userDetailsService;
+    private TokenAuthenticationProvider tokenAuthenticationProvider;
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http
-                .csrf()
-                    .ignoringAntMatchers("/**").and() // TODO: 12.09.2021 убрать
+                .addFilterAt(tokenAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .csrf().disable()
+                .sessionManagement().disable()
                 .authorizeRequests()
-                    .antMatchers("/profile").authenticated().and()
-                    //.antMatchers("/user/action/**").hasRole(User.Role.ROLE_ADMIN.toString()).and()
-                .formLogin()
-                    .loginPage("/signIn")
-                    .usernameParameter("email")
-                    .defaultSuccessUrl("/profile")
-                    .failureUrl("/signIn?error").and()
-                .addFilterAfter(userFilter, UsernamePasswordAuthenticationFilter.class)
-                .logout()
-                    .logoutRequestMatcher(new AntPathRequestMatcher("/logout", "GET"))
-                    .logoutSuccessUrl("/signIn")
-                    .invalidateHttpSession(true)
-                    .deleteCookies("JSESSIONID");
+                    .antMatchers("/api/auth/**", "/talk/create").permitAll()
+                    .antMatchers(HttpMethod.POST, "/talk").hasAuthority(User.Role.SPEAKER.toString())
+                    .antMatchers(HttpMethod.PUT, "/talk/**").hasAuthority(User.Role.SPEAKER.toString())
+                    .antMatchers(HttpMethod.DELETE, "/talk/**").hasAuthority(User.Role.SPEAKER.toString())
+                    .antMatchers(HttpMethod.GET, "/talk/**").permitAll()
+                    .antMatchers("/talk/**").authenticated()
+                    .antMatchers( "/user/**").hasAuthority(User.Role.ADMIN.toString())
+                    .antMatchers("/","/home","/register","/login").permitAll()
+                    .antMatchers("/css","/js").permitAll().and();
     }
 
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder);
+        auth.authenticationProvider(tokenAuthenticationProvider);
     }
 }

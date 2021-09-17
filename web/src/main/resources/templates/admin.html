@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml"
+      xmlns:v-on="http://www.w3.org/1999/xhtml" xmlns:v-if="http://www.w3.org/1999/xhtml"
+      xmlns:v-bind="http://www.w3.org/1999/xhtml">
+<head th:replace="layouts/header :: header('Talk')"/>
+<body>
+<div id="root">
+    <header th:replace="layouts/nav :: nav"></header>
+    <div class="container">
+        <h1 class="text-center">Admin page</h1>
+        <h2>Users</h2>
+        <p>
+        <table class="table">
+            <tr>
+                <td>Email</td>
+                <td>Role</td>
+                <td>Delete</td>
+                <td>To speaker</td>
+            </tr>
+            <tr v-for="user in users">
+                <td>{{user.email}}</td>
+                <td>{{user.role}}</td>
+                <td>
+                    <button class="btn btn-danger" v-if="user.role !== 'ADMIN'" v-bind:id="user.id" v-on:click="deleteUser">Delete</button>
+                </td>
+                <td>
+                    <button class="btn btn-primary" v-if="user.role === 'LISTENER'" v-bind:id="user.id" v-on:click="toSpeaker">To speaker</button>
+                </td>
+
+            </tr>
+        </table>
+        </p>
+    </div>
+</div>
+</body>
+<script>
+    function getCookie(name) {
+        var value = "; " + document.cookie;
+        var parts = value.split("; " + name + "=");
+        if (parts.length == 2) return parts.pop().split(";").shift();
+    }
+
+    function getUserIndex(id, users) {
+        let index = -1;
+        let i = 0
+        users.forEach(function (user) {
+            if (user.id == id) index = i
+            i++
+        })
+
+        return index
+    }
+
+    window.Event = new Vue({
+        data: {flag: false, speakerSuccess: false}
+    });
+
+    var app = new Vue({
+        el: '#root',
+        data: {
+            users: [],
+        },
+        mounted() {
+            if (getCookie("access_token")) {
+                axios.get("/getUser/?access_token=" + getCookie("access_token"))
+                    .then(function (response) {
+                        let user = response.data
+                        if (user.role !== "ADMIN") {
+                            window.location.replace("/")
+                        }
+                    }.bind(this))
+                    .catch(function (error) {
+                        delete_cookie("access_token");
+                        window.location.replace("/")
+                    });
+            } else {
+                window.location.replace("/")
+            }
+
+            this.fetchUsers();
+        },
+        methods: {
+            fetchUsers() {
+                console.log('test')
+                axios.get("/users").then(function (response) {
+                    this.users = response.data;
+                }.bind(this));
+            },
+            deleteUser : function (event) {
+                let id = event.target.id
+                window.Event.flag = true
+                axios({
+                    method: 'delete',
+                    url: '/user/' + id,
+                    headers: {"Authorization": "Bearer " + getCookie("access_token")},
+                }).then(function (response) {
+                    window.Event.flag = true
+                })
+                if (window.Event.flag) {
+                    let userIndex = getUserIndex(id, this.users)
+                    this.users.splice(userIndex, 1)
+                }
+            },
+            toSpeaker: function (event) {
+                let id = event.target.id
+                window.Event.speakerSuccess = true
+                axios({
+                    method: 'put',
+                    url: '/user/' + id,
+                    headers: {"Authorization": "Bearer " + getCookie("access_token")},
+                }).then(function (response) {
+                    window.Event.speakerSuccess = true
+                })
+                if (window.Event.speakerSuccess) {
+                    let userIndex = getUserIndex(id, this.users)
+                    this.users[userIndex].role = 'SPEAKER'
+                }
+            }
+        }
+    });
+
+</script>
+<div th:replace="layouts/footer :: foot"></div>
+</html>

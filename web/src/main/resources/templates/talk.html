@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml"
+      xmlns:v-on="http://www.w3.org/1999/xhtml" xmlns:v-if="http://www.w3.org/1999/xhtml">
+<head th:replace="layouts/header :: header('Talk')"/>
+<body>
+<div id="root">
+    <header th:replace="layouts/nav :: nav"></header>
+    <div class="container">
+        <h1 class="text-center">{{schedule.talk.title}}</h1>
+        <h2>Speakers</h2>
+        <p>
+        <ul>
+            <li v-for="speaker in schedule.talk.speakers">{{speaker.email}}</li>
+        </ul>
+        </p>
+        <h2>Date</h2>
+        <p>{{schedule.dateStart}} - {{schedule.dateEnd}}</p>
+        <div class="row" id="ownerButtons" style="display: none">
+            <a class="btn btn-danger mb-5" v-on:click="deleteTalk">Delete</a>
+        </div>
+    </div>
+</div>
+</body>
+<script>
+    function getCookie(name) {
+        var value = "; " + document.cookie;
+        var parts = value.split("; " + name + "=");
+        if (parts.length == 2) return parts.pop().split(";").shift();
+    }
+
+    window.Event = new Vue({
+        data: {owner: false}
+    });
+
+    var app = new Vue({
+        el: '#root',
+        data: {
+            schedule: {},
+            talkId: '',
+        },
+        mounted() {
+            let splits = window.location.href.split('/')
+            let id = splits[splits.length - 1]
+            this.talkId = id
+            this.fetchSchedule();
+
+            if (getCookie("access_token")) {
+                axios.get("/getUser/?access_token=" + getCookie("access_token"))
+                    .then(function (response) {
+                        let userId = response.data.id
+                        let flag = false;
+                        this.schedule.talk.speakers.forEach(function (speaker) {
+                            if (speaker.id === userId) {
+                                // неоптимально, нужен выход по условию
+                                console.log('r')
+                                flag = true
+                            }
+                        })
+                        if (flag) $('#ownerButtons').show()
+                    }.bind(this))
+                    .catch(function (error) {
+                        delete_cookie("access_token");
+                        window.location.replace("/")
+                    });
+            }
+        },
+        methods: {
+            fetchSchedule() {
+                axios.get("/schedule/" + this.talkId).then(function (response) {
+                    this.schedule = response.data;
+                    console.log(this.schedule)
+                }.bind(this));
+            },
+            isOwner() {
+                return window.Event.owner
+            },
+            deleteTalk() {
+                axios({
+                    method: "delete",
+                    url: "/talk/" + this.talkId,
+                    headers: {"Authorization": "Bearer " + getCookie("access_token")},
+                }).then(function (response) {
+                    window.location.replace("/")
+                }.bind(this));
+            },
+        }
+    });
+
+    Vue.component('schedule-list', {
+        props: ['schedules'],
+        data: function () {
+            return {
+                schedule: null
+            }
+        },
+        template:
+            '<div class="row">' +
+            '<schedule-row v-for="schedule in schedules" :key="schedule.id" ' + ':schedule="schedule" />' +
+            '</div>',
+    });
+
+    Vue.component('schedule-row', {
+        props: ['schedule'],
+        template: '    <div class="col"><div class="card" style="width: 18rem;">' +
+            '        <div class="card-body">' +
+            '            <h5 class="card-title"> {{schedule.talk.title}}</h5>' +
+            '            <p class="card-text">When: {{schedule.dateStart}}</p>' +
+            '            <a class="btn btn-primary text-white" v-on:click="followTalk">More</a>' +
+            '        </div>' +
+            '    </div>' +
+            '</div>',
+        methods: {
+            followTalk: function () {
+                console.log(this.schedule.talk.id)
+                document.location.replace("/talk/" + this.schedule.talk.id)
+            }
+        }
+    });
+</script>
+<div th:replace="layouts/footer :: foot"></div>
+</html>
